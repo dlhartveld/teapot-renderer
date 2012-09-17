@@ -1,13 +1,15 @@
 $(document).ready(
 	function() {
 
+		var container = $("#container");
+		
 		$("#render").click(function() {
-			var triangles = readInput();
+			var triangles = sortPointsInTriangles(readInput());
+			
+			// Prints inputs
+			debugInputs(container, triangles);
 
-			sortPointsInTriangle(triangles);
 			transformTriangles(triangles);
-
-			console.log(triangles);
 
 		});
 
@@ -15,9 +17,7 @@ $(document).ready(
 			for ( var i = 0; i < triangles.length; i++) {
 				var triangle = triangles[i];
 				transformTriangle(triangle);
-
 			}
-
 		}
 
 		function transformTriangle(triangle) {
@@ -44,9 +44,9 @@ $(document).ready(
 		}
 
 		function transformEqualYsAbove(triangle) {
-			if (triangle.points[0].x < triangle.points[1].x) {
+			if (triangle[0].x < triangle[1].x) {
 				return transformEqualYsLeftOutsideSquare(triangle);
-			} else if (triangle.points[0].x > triangle.points[2].x) {
+			} else if (triangle[0].x > triangle[2].x) {
 				return transformEqualYsRightOutsideSquare(triangle);
 			} else {
 				return transformEqualYsInsideSquare(triangle);
@@ -54,16 +54,16 @@ $(document).ready(
 		}
 		
 		function transformEqualYsLeftOutsideSquare(triangle) {
-			var newy = (triangle.points[2].x - triangle.points[1].x) * (triangle.points[2].y - triangle.points[0].y) / (triangle.points[2].x * triangle.points[0].x);
+			var newy = (triangle[2].x - triangle[1].x) * (triangle[2].y - triangle[0].y) / (triangle[2].x * triangle[0].x);
 			var d = new Object();
-			d.x = triangle.points[1].x;
+			d.x = triangle[1].x;
 			d.y = newy;
 			
 			var left = new Object();
-			left.points = new Array(triangle.points[0], d, triangle.points[1]);
+			left.points = new Array(triangle[0], d, triangle[1]);
 			
 			var right = new Object();
-			right.points = new Array(d, triangle.points[1], triangle.points[2]);
+			right.points = new Array(d, triangle[1], triangle[2]);
 			
 			return new Array(right).concat(transformTriangle(left));
 		}
@@ -78,11 +78,11 @@ $(document).ready(
 
 		function findEqualX(triangle) {
 
-			if (triangle.points[0].x == triangle.point[1].x) {
+			if (triangle[0].x == triangle[1].x) {
 				return new Array(0, 1);
-			} else if (triangle.points[1].x == triangle.points[2].x) {
+			} else if (triangle[1].x == triangle[2].x) {
 				return new Array(1, 2);
-			} else if (triangle.points[2].x == triangle.point[0].x) {
+			} else if (triangle[2].x == triangle[0].x) {
 				return new Array(2, 0);
 			} else {
 				return new Array();
@@ -90,65 +90,67 @@ $(document).ready(
 
 		}
 
-		function findEqualY() {
+		function findEqualY(triangle) {
 
-			if (triangle.points[0].y == triangle.point[1].y) {
+			if (triangle[0].y == triangle[1].y) {
 				return new Array(0, 1);
-			} else if (triangle.points[1].y == triangle.points[2].y) {
+			} else if (triangle[1].y == triangle[2].y) {
 				return new Array(1, 2);
-			} else if (triangle.points[2].y == triangle.point[0].y) {
+			} else if (triangle[2].y == triangle[0].y) {
 				return new Array(2, 0);
 			} else {
 				return new Array();
 			}
 
-		}
-
-		function sortPointsInTriangle(triangles) {
-			for ( var i = 0; i < triangles.length; i++) {
-				var triangle = triangles[i];
-				triangle.points.sort(function(xyCoord1, xyCoord2) {
-					var compare = xyCoord1.y - xyCoord2.y;
-					if (compare != 0) {
-						return compare;
-					}
-					return xyCoord1.x - xyCoord2.x;
-				});
-			}
-		}
-
-		function readInput() {
-			var input = $("#input").val();
-			var lines = input.split("\n");
-
-			var triangles = [];
-
-			for ( var i = 0; i < lines.length; i++) {
-				var line = lines[i];
-
-				var points = line.substring(2, line.length - 2).split(
-						"}\",\"{");
-
-				var triangle = {};
-				triangle.points = [];
-
-				for ( var j = 0; j < points.length; j++) {
-					var point = points[j];
-
-					var xyPoint = {};
-
-					var coord = point.split(",");
-					xyPoint.x = (parseFloat(coord[0]) + 1) * 250;
-					xyPoint.y = (parseFloat(coord[1]) + 1) * 250;
-
-					triangle.points.push(xyPoint);
-				}
-
-				triangles.push(triangle);
-			}
-
-			return triangles;
 		}
 
 	}
 );
+
+// Parser functions
+
+function readInput() {
+	return prelude.map(parseLine, $("#input").val().split("\n"));
+}
+
+function parseLine(line) {
+	return prelude.map(parsePoint, line.substring(2, line.length - 2).split("}\",\"{"));
+}
+
+function parsePoint(point) {
+	return parseCoordinate(point.split(","));
+}
+
+function parseCoordinate(coordinate) {
+	return { x: mapCoordinate(coordinate[0]), y: mapCoordinate(coordinate[1]) };
+}
+
+function mapCoordinate(value) {
+	return (parseFloat(value) + 1) * 250;
+}
+
+// Sorting functions
+
+function sortPointsInTriangles(triangles) {
+	return prelude.map(sortPointsInTriangle, triangles);
+}
+
+function sortPointsInTriangle(triangle) {
+	triangle.sort(function(p1, p2) {
+		if (p1.y != p2.y) {
+			return p1.y - p2.y;
+		}
+		return p1.x - p2.x;
+	});
+	
+	return triangle;
+}
+
+// Debug functions 
+
+function debugInputs(container, triangles) {
+	container.empty();
+	prelude.each(function(t) {
+		container.append("<div>{ x: " + t[0].x + " y: " + t[0].y + " , x: " + t[1].x + " y: " + t[1].y + " , x: " + t[2].x + " y: " + t[2].y + " }</div>");
+	}, triangles);
+}
