@@ -1,3 +1,5 @@
+static var canvasWidth = 500;
+
 $(document).ready(
 	function() {
 
@@ -122,11 +124,53 @@ function parsePoint(point) {
 }
 
 function parseCoordinate(coordinate) {
-	return { x: mapCoordinate(coordinate[0]), y: mapCoordinate(coordinate[1]) };
+	return { x: parseFloat(coordinate[0]), y: parseFloat(coordinate[1]) };
 }
 
-function mapCoordinate(value) {
-	return (parseFloat(value) + 1) * 250;
+// Scaling functions.
+
+function determineScaling(triangles) {
+	boundingBoxTriangles(triangles);
+}
+
+function boundingBoxTriangles(triangles) {
+	return prelude.fold1(overlay, prelude.map(measureTriangle, triangles));
+}
+
+function overlay(t1, t2) {
+	return boundingBox(t1.concat(t2));
+}
+
+function boundingBox(t) {
+	return createBoundingBox(leftest(t), rightest(t), lowest(t), highest(t));
+}
+
+function createBoundingBox(left, right, top, bottom) {
+	return { leftX: left, rightX: right, topY: top, bottomY: bottom };
+}
+
+function leftest(t) {
+	return prelude.minimum(xCoordinates(t));
+}
+
+function rightest(t) {
+	return prelude.maximum(xCoordinates(t));
+}
+
+function highest(t) {
+	return prelude.maximum(yCoordinates(t));
+}
+
+function lowest(t) {
+	return prelude.minimum(yCoordinates(t));
+}
+
+function xCoordinates(t) {
+	return prelude.map(function(point) { return point.x; }, t);
+}
+
+function yCoordinates(t) {
+	return prelude.map(function(point) { return point.y; }, t);
 }
 
 // Sorting functions
@@ -136,12 +180,14 @@ function sortPointsInTriangles(triangles) {
 }
 
 function sortPointsInTriangle(triangle) {
-	triangle.sort(function(p1, p2) {
-		if (p1.y != p2.y) {
-			return p1.y - p2.y;
-		}
-		return p1.x - p2.x;
-	});
+	triangle.sort(
+			function(p1, p2) {
+				if (p1.y != p2.y) {
+					return p1.y - p2.y;
+				}
+				return p1.x - p2.x;
+			}
+	);
 	
 	return triangle;
 }
