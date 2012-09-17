@@ -1,4 +1,5 @@
-static var canvasWidth = 500;
+var canvasWidth = 500;
+var canvasPadding = 20;
 
 $(document).ready(
 	function() {
@@ -7,11 +8,12 @@ $(document).ready(
 		
 		$("#render").click(function() {
 			var triangles = sortPointsInTriangles(readInput());
+			triangles = scaleTriangles(canvasWidth, canvasPadding, triangles);
 			
 			// Prints inputs
 			debugInputs(container, triangles);
 
-			transformTriangles(triangles);
+			//transformTriangles(triangles);
 
 		});
 
@@ -129,20 +131,52 @@ function parseCoordinate(coordinate) {
 
 // Scaling functions.
 
-function determineScaling(triangles) {
-	boundingBoxTriangles(triangles);
+function scaleTriangles(canvasWidth, canvasPadding, triangles) {
+	return scaleTrianglesWithScalar(triangles, determineScalarBasedOnTriangles(canvasWidth, canvasPadding, triangles));
+}
+
+function determineScalarBasedOnTriangles(canvasWidth, canvasPadding, triangles) {
+	return determineScalars(canvasWidth - canvasPadding * 2, canvasPadding, boundingBoxTriangles(triangles));
+}
+
+function scaleTrianglesWithScalar(triangles, scalar) {
+	return prelude.map(
+			function(triangle) {
+				return scalePointsInTriangle(triangle, scalar);
+			},
+			triangles
+	);
+}
+
+function scalePointsInTriangle(points, scalar) {
+	return prelude.map(
+			function(p) {
+				return { x: scalar.moveX + p.x * scalar.scaleX, y: scalar.moveY + p.y * scalar.scaleY };
+			},
+			points
+	);
+}
+
+function determineScalars(width, padding, box) {
+	var xScalar = width / (box.rightX - box.leftX);
+	return { moveX: padding - box.leftX, scaleX: xScalar, moveY: padding - box.topY, scaleY: xScalar };
 }
 
 function boundingBoxTriangles(triangles) {
-	return prelude.fold1(overlay, prelude.map(measureTriangle, triangles));
-}
-
-function overlay(t1, t2) {
-	return boundingBox(t1.concat(t2));
+	return prelude.fold1(overlay, prelude.map(boundingBox, triangles));
 }
 
 function boundingBox(t) {
 	return createBoundingBox(leftest(t), rightest(t), lowest(t), highest(t));
+}
+
+function overlay(t1, t2) {
+	return createBoundingBox(
+			Math.min(t1.leftX, t2.leftX), 
+			Math.max(t1.rightX, t2.rightX), 
+			Math.min(t1.topY, t2.topY), 
+			Math.max(t1.bottomY, t2.bottomY) 
+	);
 }
 
 function createBoundingBox(left, right, top, bottom) {
@@ -194,9 +228,17 @@ function sortPointsInTriangle(triangle) {
 
 // Debug functions 
 
-function debugInputs(container, triangles) {
+function debugInputs(container, tr) {
 	container.empty();
-	prelude.each(function(t) {
-		container.append("<div>{ x: " + t[0].x + " y: " + t[0].y + " , x: " + t[1].x + " y: " + t[1].y + " , x: " + t[2].x + " y: " + t[2].y + " }</div>");
-	}, triangles);
+	prelude.each(
+			function(t) {
+				container.append("<div>{ x: " + t[0].x + " y: " + t[0].y + " , x: " + t[1].x + " y: " + t[1].y + " , x: " + t[2].x + " y: " + t[2].y + " }</div>");
+			}, 
+			tr
+	);
+}
+
+function debugScalars(container, scalars) {
+	container.empty();
+	container.append("<div>{ moveX: " + scalars.moveX + ", scaleX: " + scalars.scaleX + ", moveY: " + scalars.moveY + ", scaleY: " + scalars.scaleY + " }</div>");
 }
