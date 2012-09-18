@@ -7,7 +7,8 @@ $(document).ready(
 		var canvasPadding = 20;
 		
 		$("#render").click(function() {
-			var triangles = sortPointsInTriangles(readInput());
+			var lines = $("#input").val().split("\n");
+			var triangles = sortPointsInTriangles(readInput(lines));
 			triangles = scaleTriangles(canvasWidth, canvasPadding, triangles);
 			
 			// Prints inputs
@@ -132,8 +133,8 @@ function Box(leftX, rightX, topY, bottomY) {
 
 // Parser functions
 
-function readInput() {
-	return prelude.map(parseLine, $("#input").val().split("\n"));
+function readInput(lines) {
+	return prelude.map(parseLine, lines);
 }
 
 function parseLine(line) {
