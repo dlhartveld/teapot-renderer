@@ -1,10 +1,10 @@
-var canvasWidth = 500;
-var canvasPadding = 20;
 
 $(document).ready(
 	function() {
 
 		var container = $("#container");
+		var canvasWidth = container.width();
+		var canvasPadding = 20;
 		
 		$("#render").click(function() {
 			var triangles = sortPointsInTriangles(readInput());
@@ -151,7 +151,11 @@ function parseCoordinate(coordinate) {
 // Scaling functions.
 
 function scaleViewport(width, padding, triangles, viewport) {
-	viewport.css("height", prelude.ceiling(ratio(boundingBox(triangles)) * (width - 2*padding) + 2*padding) + "px");
+	viewport.css("height", calculateViewportHeight(width, padding, triangles) + "px");
+}
+
+function calculateViewportHeight(width, padding, triangles) {
+	return prelude.ceiling(ratio(boundingBox(triangles)) * (width - 2*padding) + 2*padding)
 }
 
 function scaleTriangles(canvasWidth, canvasPadding, triangles) {
@@ -163,21 +167,11 @@ function pointMapperBasedOnTriangles(canvasWidth, canvasPadding, triangles) {
 }
 
 function scaleTrianglesWithScalar(triangles, scalar) {
-	return prelude.map(
-			function(triangle) {
-				return scalePointsInTriangle(triangle, scalar);
-			},
-			triangles
-	);
+	return prelude.map(prelude.curry(scalePointsInTriangle)(scalar), triangles);
 }
 
-function scalePointsInTriangle(triangle, scalar) {
-	return new Triangle(prelude.map(
-			function(p) {
-				return scalar.call(this, p);
-			},
-			triangle.points
-	));
+function scalePointsInTriangle(scalar, triangle) {
+	return new Triangle(prelude.map(scalar, triangle.points));
 }
 
 function pointMapper(width, padding, box) {
@@ -201,10 +195,10 @@ function pointMapper(width, padding, box) {
 }
 
 function boundingBox(t) {
-	if ($.isArray(t) && !(t instanceof Triangle)) {
-		return prelude.fold1(overlay, prelude.map(boundingBox, t));
+	if (t.constructor == Triangle) {
+		return new Box(leftest(t), rightest(t), lowest(t), highest(t));
 	}
-	return new Box(leftest(t), rightest(t), lowest(t), highest(t));
+	return prelude.fold1(overlay, prelude.map(boundingBox, t));
 }
 
 function overlay(t1, t2) {
