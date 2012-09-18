@@ -12,6 +12,7 @@ $(document).ready(
 			
 			// Prints inputs
 			debugInputs(container, triangles);
+			scaleViewport(canvasWidth, canvasPadding, triangles, container);
 
 			//transformTriangles(triangles);
 
@@ -111,6 +112,24 @@ $(document).ready(
 	}
 );
 
+//Objects
+
+function Point(x, y) {
+	this.x = x;
+	this.y = y;
+}
+
+function Triangle(points) {
+	this.points = points;
+}
+
+function Box(leftX, rightX, topY, bottomY) {
+	this.leftX = leftX;
+	this.rightX = rightX;
+	this.topY = topY;
+	this.bottomY = bottomY;
+}
+
 // Parser functions
 
 function readInput() {
@@ -118,7 +137,7 @@ function readInput() {
 }
 
 function parseLine(line) {
-	return prelude.map(parsePoint, line.substring(2, line.length - 2).split("}\",\"{"));
+	return new Triangle(prelude.map(parsePoint, line.substring(2, line.length - 2).split("}\",\"{")));
 }
 
 function parsePoint(point) {
@@ -126,17 +145,21 @@ function parsePoint(point) {
 }
 
 function parseCoordinate(coordinate) {
-	return { x: parseFloat(coordinate[0]), y: parseFloat(coordinate[1]) };
+	return new Point(parseFloat(coordinate[0]), parseFloat(coordinate[1]));
 }
 
 // Scaling functions.
 
-function scaleTriangles(canvasWidth, canvasPadding, triangles) {
-	return scaleTrianglesWithScalar(triangles, determineScalarBasedOnTriangles(canvasWidth, canvasPadding, triangles));
+function scaleViewport(width, padding, triangles, viewport) {
+	viewport.css("height", prelude.ceiling(ratio(boundingBox(triangles)) * (width - 2*padding) + 2*padding) + "px");
 }
 
-function determineScalarBasedOnTriangles(canvasWidth, canvasPadding, triangles) {
-	return determineScalars(canvasWidth - canvasPadding * 2, canvasPadding, boundingBoxTriangles(triangles));
+function scaleTriangles(canvasWidth, canvasPadding, triangles) {
+	return scaleTrianglesWithScalar(triangles, pointMapperBasedOnTriangles(canvasWidth, canvasPadding, triangles));
+}
+
+function pointMapperBasedOnTriangles(canvasWidth, canvasPadding, triangles) {
+	return pointMapper(canvasWidth - canvasPadding * 2, canvasPadding, boundingBox(triangles));
 }
 
 function scaleTrianglesWithScalar(triangles, scalar) {
@@ -148,30 +171,44 @@ function scaleTrianglesWithScalar(triangles, scalar) {
 	);
 }
 
-function scalePointsInTriangle(points, scalar) {
-	return prelude.map(
+function scalePointsInTriangle(triangle, scalar) {
+	return new Triangle(prelude.map(
 			function(p) {
-				return { x: scalar.moveX + p.x * scalar.scaleX, y: scalar.moveY + p.y * scalar.scaleY };
+				return scalar.call(this, p);
 			},
-			points
-	);
+			triangle.points
+	));
 }
 
-function determineScalars(width, padding, box) {
-	var xScalar = width / (box.rightX - box.leftX);
-	return { moveX: padding - box.leftX, scaleX: xScalar, moveY: padding - box.topY, scaleY: xScalar };
-}
-
-function boundingBoxTriangles(triangles) {
-	return prelude.fold1(overlay, prelude.map(boundingBox, triangles));
+function pointMapper(width, padding, box) {
+	function mapX(p) {
+		if (boxWidth(box) == 0) {
+			return padding;
+		}
+		return (p.x - box.leftX) / boxWidth(box) * width + padding;
+	}
+	
+	function mapY(p) {
+		if (boxHeight(box) == 0) {
+			return padding;
+		}
+		return (p.y - box.topY) / boxHeight(box) * width * ratio(box) + padding;
+	}
+	
+	return function(p) {
+		return new Point(mapX(p), mapY(p));
+	};
 }
 
 function boundingBox(t) {
-	return createBoundingBox(leftest(t), rightest(t), lowest(t), highest(t));
+	if ($.isArray(t) && !(t instanceof Triangle)) {
+		return prelude.fold1(overlay, prelude.map(boundingBox, t));
+	}
+	return new Box(leftest(t), rightest(t), lowest(t), highest(t));
 }
 
 function overlay(t1, t2) {
-	return createBoundingBox(
+	return new Box(
 			Math.min(t1.leftX, t2.leftX), 
 			Math.max(t1.rightX, t2.rightX), 
 			Math.min(t1.topY, t2.topY), 
@@ -179,32 +216,40 @@ function overlay(t1, t2) {
 	);
 }
 
-function createBoundingBox(left, right, top, bottom) {
-	return { leftX: left, rightX: right, topY: top, bottomY: bottom };
-}
-
 function leftest(t) {
-	return prelude.minimum(xCoordinates(t));
+	return prelude.minimum(xCoordinates(t.points));
 }
 
 function rightest(t) {
-	return prelude.maximum(xCoordinates(t));
+	return prelude.maximum(xCoordinates(t.points));
 }
 
 function highest(t) {
-	return prelude.maximum(yCoordinates(t));
+	return prelude.maximum(yCoordinates(t.points));
 }
 
 function lowest(t) {
-	return prelude.minimum(yCoordinates(t));
+	return prelude.minimum(yCoordinates(t.points));
 }
 
-function xCoordinates(t) {
-	return prelude.map(function(point) { return point.x; }, t);
+function xCoordinates(points) {
+	return prelude.map(function(point) { return point.x; }, points);
 }
 
-function yCoordinates(t) {
-	return prelude.map(function(point) { return point.y; }, t);
+function yCoordinates(points) {
+	return prelude.map(function(point) { return point.y; }, points);
+}
+
+function boxWidth(box) {
+	return box.rightX - box.leftX;
+}
+
+function boxHeight(box) {
+	return box.bottomY - box.topY;
+}
+
+function ratio(box) {
+	return boxHeight(box) / boxWidth(box);
 }
 
 // Sorting functions
@@ -214,7 +259,7 @@ function sortPointsInTriangles(triangles) {
 }
 
 function sortPointsInTriangle(triangle) {
-	triangle.sort(
+	triangle.points.sort(
 			function(p1, p2) {
 				if (p1.y != p2.y) {
 					return p1.y - p2.y;
@@ -228,17 +273,13 @@ function sortPointsInTriangle(triangle) {
 
 // Debug functions 
 
-function debugInputs(container, tr) {
+function debugInputs(container, triangles) {
 	container.empty();
 	prelude.each(
 			function(t) {
-				container.append("<div>{ x: " + t[0].x + " y: " + t[0].y + " , x: " + t[1].x + " y: " + t[1].y + " , x: " + t[2].x + " y: " + t[2].y + " }</div>");
+				container.append("<div>{ x: " + t.points[0].x + " y: " + t.points[0].y + " , x: " + t.points[1].x + " y: " + t.points[1].y + " , x: " + t.points[2].x + " y: " + t.points[2].y + " }</div>");
 			}, 
-			tr
+			triangles
 	);
 }
 
-function debugScalars(container, scalars) {
-	container.empty();
-	container.append("<div>{ moveX: " + scalars.moveX + ", scaleX: " + scalars.scaleX + ", moveY: " + scalars.moveY + ", scaleY: " + scalars.scaleY + " }</div>");
-}
