@@ -83,36 +83,34 @@ $(document).ready(
 			
 		}
 
-		function findEqualX(triangle) {
-
-			if (triangle[0].x == triangle[1].x) {
-				return new Array(0, 1);
-			} else if (triangle[1].x == triangle[2].x) {
-				return new Array(1, 2);
-			} else if (triangle[2].x == triangle[0].x) {
-				return new Array(2, 0);
-			} else {
-				return new Array();
-			}
-
-		}
-
-		function findEqualY(triangle) {
-
-			if (triangle[0].y == triangle[1].y) {
-				return new Array(0, 1);
-			} else if (triangle[1].y == triangle[2].y) {
-				return new Array(1, 2);
-			} else if (triangle[2].y == triangle[0].y) {
-				return new Array(2, 0);
-			} else {
-				return new Array();
-			}
-
-		}
-
 	}
 );
+
+// Triangle functions
+
+function findEqualX(triangle) {
+	if (triangle[0].x == triangle[1].x) {
+		return new Array(0, 1);
+	} else if (triangle[1].x == triangle[2].x) {
+		return new Array(1, 2);
+	} else if (triangle[2].x == triangle[0].x) {
+		return new Array(2, 0);
+	} else {
+		return new Array();
+	}
+}
+
+function findEqualY(triangle) {
+	if (triangle[0].y == triangle[1].y) {
+		return new Array(0, 1);
+	} else if (triangle[1].y == triangle[2].y) {
+		return new Array(1, 2);
+	} else if (triangle[2].y == triangle[0].y) {
+		return new Array(2, 0);
+	} else {
+		return new Array();
+	}
+}
 
 //Objects
 
