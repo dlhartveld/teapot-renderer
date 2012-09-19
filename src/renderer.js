@@ -8,12 +8,13 @@ $(document).ready(
 		
 		$("#render").click(function() {
 			var lines = $("#input").val().split("\n");
-			var triangles = sortPointsInTriangles(readInput(lines));
-			triangles = scaleTriangles(canvasWidth, canvasPadding, triangles);
+			var triangles = scaleTriangles(canvasWidth, canvasPadding, sortPointsInTriangles(readInput(lines)));
+			
+			// Resize the viewport to make the render fit.
+			container.css("height", calculateViewportHeight(canvasWidth, canvasPadding, triangles) + "px");
 			
 			// Prints inputs
 			debugInputs(container, triangles);
-			scaleViewport(canvasWidth, canvasPadding, triangles, container);
 
 			//transformTriangles(triangles);
 
@@ -151,10 +152,6 @@ function parseCoordinate(coordinate) {
 
 // Scaling functions.
 
-function scaleViewport(width, padding, triangles, viewport) {
-	viewport.css("height", calculateViewportHeight(width, padding, triangles) + "px");
-}
-
 function calculateViewportHeight(width, padding, triangles) {
 	return prelude.ceiling(ratio(boundingBox(triangles)) * (width - 2*padding) + 2*padding)
 }
@@ -195,36 +192,22 @@ function pointMapper(width, padding, box) {
 	};
 }
 
-function boundingBox(t) {
-	if (t.constructor == Triangle) {
-		return new Box(leftest(t), rightest(t), lowest(t), highest(t));
-	}
-	return prelude.fold1(overlay, prelude.map(boundingBox, t));
+// Point functions
+
+function leftest(points) {
+	return prelude.minimum(xCoordinates(points));
 }
 
-function overlay(t1, t2) {
-	return new Box(
-			Math.min(t1.leftX, t2.leftX), 
-			Math.max(t1.rightX, t2.rightX), 
-			Math.min(t1.topY, t2.topY), 
-			Math.max(t1.bottomY, t2.bottomY) 
-	);
+function rightest(points) {
+	return prelude.maximum(xCoordinates(points));
 }
 
-function leftest(t) {
-	return prelude.minimum(xCoordinates(t.points));
+function highest(points) {
+	return prelude.maximum(yCoordinates(points));
 }
 
-function rightest(t) {
-	return prelude.maximum(xCoordinates(t.points));
-}
-
-function highest(t) {
-	return prelude.maximum(yCoordinates(t.points));
-}
-
-function lowest(t) {
-	return prelude.minimum(yCoordinates(t.points));
+function lowest(points) {
+	return prelude.minimum(yCoordinates(points));
 }
 
 function xCoordinates(points) {
@@ -233,6 +216,24 @@ function xCoordinates(points) {
 
 function yCoordinates(points) {
 	return prelude.map(function(point) { return point.y; }, points);
+}
+
+// Bounding box functions
+
+function boundingBox(t) {
+	if (t.constructor == Triangle) {
+		return new Box(leftest(t.points), rightest(t.points), lowest(t.points), highest(t.points));
+	}
+	return prelude.fold1(overlap, prelude.map(boundingBox, t));
+}
+
+function overlap(t1, t2) {
+	return new Box(
+			Math.min(t1.leftX, t2.leftX), 
+			Math.max(t1.rightX, t2.rightX), 
+			Math.min(t1.topY, t2.topY), 
+			Math.max(t1.bottomY, t2.bottomY) 
+	);
 }
 
 function boxWidth(box) {
