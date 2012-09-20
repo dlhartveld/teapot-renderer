@@ -7,7 +7,7 @@ $(document).ready(
 		var canvasPadding = 20;
 		
 		$("#render").click(function() {
-			var lines = $("#input").val().split("\n");
+			var lines = $("#input").val().trim().split("\n");
 			var triangles = scaleTriangles(canvasWidth, canvasPadding, readInput(lines));
 			
 			// Resize the viewport to make the render fit.
