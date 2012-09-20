@@ -30,7 +30,7 @@ $(document).ready(
 		function render(polygon, pivot, width, height) {
 			if (width > 0) {
 				if (height > 0) {
-					container.append("<div style='position: absolute; top: " + pivot.x + "px; left: " + pivot.y + "px; width: 0px; height: 0px; border-right: " + width + "px solid rgba(0,0,0,0); border-top: " + height + "px solid red;'></div>");
+					container.append("<div style='position: absolute; top: " + topLeft(polygon).y + "px; left: " + (topLeft(polygon).x - width) + "px; width: 0px; height: 0px; border-right: " + width + "px solid rgba(0,0,0,0); border-top: " + height + "px solid red;'></div>");
 				}
 				else if (height < 0) {
 					
@@ -339,6 +339,34 @@ function overlap(t1, t2) {
 			Math.min(t1.topY, t2.topY), 
 			Math.max(t1.bottomY, t2.bottomY) 
 	);
+}
+
+function topLeft(box) {
+	if (box.constructor == Triangle) {
+		return topLeft(boundingBox(box));
+	}
+	return new Point(box.leftX, box.topY);
+}
+
+function topRight(box) {
+	if (box.constructor == Triangle) {
+		return topRight(boundingBox(box));
+	}
+	return new Point(box.rightX, box.topY);
+}
+
+function bottomLeft(box) {
+	if (box.constructor == Triangle) {
+		return bottomLeft(boundingBox(box));
+	}
+	return new Point(box.leftX, box.bottomY);
+}
+
+function bottomRight(box) {
+	if (box.constructor == Triangle) {
+		return bottomRight(boundingBox(box));
+	}
+	return new Point(box.rightX, box.bottomY);
 }
 
 function boxWidth(box) {
