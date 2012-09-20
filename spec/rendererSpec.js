@@ -195,13 +195,33 @@ describe("the triangle functions", function() {
 describe("triangle tests", function() {
 	
 	it("should be able to subdivide veritical triangle case 1", function() {
-		var triangle = new Triangle(new Array(new Point(0, 0), new Point(2, 2), new Point(0, -2)));
+		var triangle = new Triangle(new Array(new Point(0, 0), new Point(2, -2), new Point(0, 2)));
 		var expected = new Array(
-				new Triangle(new Array(new Point(2, 2), new Point(0, 0), new Point(1, 0))),
-				new Triangle(new Array(new Point(0, 0), new Point(1, 0), new Point(0, -2)))
+				new Triangle(new Array(new Point(1, 0), new Point(0, 0), new Point(1, -1))),
+				new Triangle(new Array(new Point(0, 0), new Point(0, 2), new Point(1, 0)))
 		);
 		expect(subdivide(triangle)).toEqual(expected);
 	});
+	
+	it("should be able to subdivide veritical triangle case 2", function() {
+		var triangle = new Triangle(new Array(new Point(0, 0), new Point(0, 3), new Point(1, 2)));
+		var expected = new Array(
+				new Triangle(new Array(new Point(0, 0), new Point(0, -2), new Point(1, 0))),
+				new Triangle(new Array(new Point(1, 0), new Point(0, 0), new Point(1, 1)))
+		);
+		expect(subdivide(triangle)).toEqual(expected);
+	});
+	
+	it("should be able to subdivide veritical triangle case 3", function() {
+		var triangle = new Triangle(new Array(new Point(0, 0), new Point(2, 2), new Point(0, -2)));
+		var expected = new Array(
+				new Triangle(new Array(new Point(0, 0), new Point(0, -2), new Point(1, 0))),
+				new Triangle(new Array(new Point(1, 0), new Point(0, 0), new Point(1, 1)))
+		);
+		expect(subdivide(triangle)).toEqual(expected);
+	});
+	
+	
 	
 });
 

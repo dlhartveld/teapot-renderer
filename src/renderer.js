@@ -217,7 +217,7 @@ function arrayEqual(a1, a2) {
 }
 
 function diff(haystack, subtract) {
-	return haystack.filter(function(i) {return !(subtract.indexOf(i) > -1);});
+	return haystack.filter(function(i) { return !(subtract.indexOf(i) > -1); });
 }
 
 //untested.
@@ -406,6 +406,8 @@ function sortPointsByY(triangle) {
 		)
 	);
 }
+
+// Color functions
 
 function randomColor() {
 	return "rgb(" + prelude.join(',', [randomByte(), randomByte(), randomByte()]) + ")";
