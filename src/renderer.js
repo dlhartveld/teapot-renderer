@@ -3,11 +3,18 @@ $(document).ready(
 	function() {
 
 		var container = $("#container");
+		var input = $("#input");
+		input.text("\"{0,200}\",\"{300,0}\",\"{600,200}\"\n"
+				+ "\"{0,200}\",\"{600,200}\",\"{300,400}\"\n" 
+				+ "\"{0,200}\",\"{300,400}\",\"{0,500}\"\n"
+				+ "\"{300,400}\",\"{0,500}\",\"{300,700}\"\n"
+				+ "\"{600,200}\",\"{300,400}\",\"{300,700}\"\n"
+				+ "\"{600,200}\",\"{300,700}\",\"{600,500}\"\n");
 		var canvasWidth = container.width();
 		var canvasPadding = 20;
 		
 		$("#render").click(function() {
-			var lines = $("#input").val().trim().split("\n");
+			var lines = input.val().trim().split("\n");
 			var triangles = scaleTriangles(canvasWidth, canvasPadding, readInput(lines));
 			
 			// Resize the viewport to make the render fit.
