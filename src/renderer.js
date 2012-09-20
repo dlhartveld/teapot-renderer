@@ -33,7 +33,7 @@ $(document).ready(
 					container.append("<div style='position: absolute; top: " + topRight(polygon).y + "px; left: " + (topRight(polygon).x - width) + "px; width: 0px; height: 0px; border-right: " + width + "px solid rgba(0,0,0,0); border-top: " + height + "px solid red;'></div>");
 				}
 				else if (height < 0) {
-					container.append("<div style='position: absolute; top: " + topLeft(polygon).y + "px; left: " + (topLeft(polygon).x - width) + "px; width: 0px; height: 0px; border-left: " + width + "px solid rgba(0,0,0,0); border-bottom: " + (-1 * height) + "px solid purple;'></div>");
+					container.append("<div style='position: absolute; top: " + topLeft(polygon).y + "px; left: " + topLeft(polygon).x + "px; width: 0px; height: 0px; border-right: " + width + "px solid rgba(0,0,0,0); border-bottom: " + (-1 * height) + "px solid purple;'></div>");
 				}
 			}
 			else if (width < 0) {
@@ -41,7 +41,7 @@ $(document).ready(
 					container.append("<div style='position: absolute; top: " + topLeft(polygon).y + "px; left: " + topLeft(polygon).x + "px; width: 0px; height: 0px; border-left: " + (-1 * width) + "px solid rgba(0,0,0,0); border-top: " + height + "px solid blue;'></div>");
 				}
 				else if (height < 0) {
-					container.append("<div style='position: absolute; top: " + topRight(polygon).y + "px; left: " + topRight(polygon).x + "px; width: 0px; height: 0px; border-right: " + (-1 * width) + "px solid rgba(0,0,0,0); border-bottom: " + (-1 * height) + "px solid green;'></div>");
+					container.append("<div style='position: absolute; top: " + topRight(polygon).y + "px; left: " + (topRight(polygon).x + width) + "px; width: 0px; height: 0px; border-left: " + (-1 * width) + "px solid rgba(0,0,0,0); border-bottom: " + (-1 * height) + "px solid green;'></div>");
 				}
 			}
 		}
