@@ -164,5 +164,46 @@ describe("the scaling functions", function() {
 	
 });
 
+describe("the triangle functions", function() {
+	
+	it("should be able to determine if three points are on the same x axis", function() {
+		expect(findEqualX(new Triangle(new Array(new Point(0, 1), new Point(0, 2), new Point(0, 3))))).toEqual(new Array(0, 1, 2));
+	});
+	
+	it("should be able to determine if three points are on the same y axis", function() {
+		expect(findEqualY(new Triangle(new Array(new Point(0, 2), new Point(1, 2), new Point(2, 2))))).toEqual(new Array(0, 1, 2));
+	});
+	
+	it("should be able to determine if two points are on the same x axis", function() {
+		expect(findEqualX(new Triangle(new Array(new Point(0, 1), new Point(1, 2), new Point(0, 3))))).toEqual(new Array(0, 2));
+	});
+	
+	it("should be able to determine if two points are on the same y axis", function() {
+		expect(findEqualY(new Triangle(new Array(new Point(0, 1), new Point(1, 2), new Point(0, 2))))).toEqual(new Array(1, 2));
+	});
+
+	it("should be able to determine if no two points are on the same x axis", function() {
+		expect(findEqualX(new Triangle(new Array(new Point(0, 1), new Point(1, 2), new Point(2, 3))))).toEqual(new Array());
+	});
+	
+	it("should be able to determine if no two points are on the same y axis", function() {
+		expect(findEqualY(new Triangle(new Array(new Point(0, 1), new Point(1, 2), new Point(2, 3))))).toEqual(new Array());
+	});
+	
+});
+
+describe("triangle tests", function() {
+	
+	it("should be able to subdivide veritical triangle case 1", function() {
+		var triangle = new Triangle(new Array(new Point(0, 0), new Point(2, 2), new Point(0, -2)));
+		var expected = new Array(
+				new Triangle(new Array(new Point(2, 2), new Point(0, 0), new Point(1, 0))),
+				new Triangle(new Array(new Point(0, 0), new Point(1, 0), new Point(0, -2)))
+		);
+		expect(subdivide(triangle)).toEqual(expected);
+	});
+	
+});
+
 
 

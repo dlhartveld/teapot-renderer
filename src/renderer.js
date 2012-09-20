@@ -8,111 +8,48 @@ $(document).ready(
 		
 		$("#render").click(function() {
 			var lines = $("#input").val().split("\n");
-			var triangles = scaleTriangles(canvasWidth, canvasPadding, sortPointsInTriangles(readInput(lines)));
+			var triangles = scaleTriangles(canvasWidth, canvasPadding, readInput(lines));
 			
 			// Resize the viewport to make the render fit.
-			container.css("height", calculateViewportHeight(canvasWidth, canvasPadding, triangles) + "px");
+			container.empty().css("height", calculateViewportHeight(canvasWidth, canvasPadding, triangles) + "px");
 			
-			// Prints inputs
-			debugInputs(container, triangles);
-
-			//transformTriangles(triangles);
-
+			var polygons = subdivideAll(triangles);
+			
+			for (var i = 0; i < polygons.length; i++) {
+				var polygon = polygons[i];
+				var box = boundingBox(polygon);
+				var pivot = pivotOf(polygon);
+				
+				var width = box.leftX == pivot.x ? (box.rightX - pivot.x) : (box.leftX - pivot.x);
+				var height = box.topY == pivot.y ? (box.bottomY - pivot.y) : (box.topY - pivot.y);
+				
+				render(polygon, pivot, width, height);
+			}
 		});
-
-		function transformTriangles(triangles) {
-			for ( var i = 0; i < triangles.length; i++) {
-				var triangle = triangles[i];
-				transformTriangle(triangle);
-			}
-		}
-
-		function transformTriangle(triangle) {
-			var equalXs = findEqualX(triangle);
-			var equalYs = findEqualY(triangle);
-
-			if (equalXs.length > 0 && equalYs.length > 0) {
-				return new Array(triangle);
-			} else if (equalYs.length > 0) {
-				switch (equalYs[0] + equalYs[1]) {
-				case 1:
-					return transformEqualYsUnder(triangle);
-				case 3:
-					return transformEqualYsAbove(triangle);
-				default:
-					console.log("ERROR: Illegal equalYs value: " + equalYs
-							+ " for triangle: " + triangle);
+		
+		function render(polygon, pivot, width, height) {
+			if (width > 0) {
+				if (height > 0) {
+					container.append("<div style='position: absolute; top: " + pivot.x + "px; left: " + pivot.y + "px; width: 0px; height: 0px; border-right: " + width + "px solid rgba(0,0,0,0); border-top: " + height + "px solid red;'></div>");
 				}
-			} else if (equalXs.length > 0) {
-
-			} else {
-
+				else if (height < 0) {
+					
+				}
 			}
-		}
-
-		function transformEqualYsAbove(triangle) {
-			if (triangle[0].x < triangle[1].x) {
-				return transformEqualYsLeftOutsideSquare(triangle);
-			} else if (triangle[0].x > triangle[2].x) {
-				return transformEqualYsRightOutsideSquare(triangle);
-			} else {
-				return transformEqualYsInsideSquare(triangle);
+			else if (width < 0) {
+				if (height > 0) {
+					
+				}
+				else if (height < 0) {
+					
+				}
 			}
-		}
-		
-		function transformEqualYsLeftOutsideSquare(triangle) {
-			var newy = (triangle[2].x - triangle[1].x) * (triangle[2].y - triangle[0].y) / (triangle[2].x * triangle[0].x);
-			var d = new Object();
-			d.x = triangle[1].x;
-			d.y = newy;
-			
-			var left = new Object();
-			left.points = new Array(triangle[0], d, triangle[1]);
-			
-			var right = new Object();
-			right.points = new Array(d, triangle[1], triangle[2]);
-			
-			return new Array(right).concat(transformTriangle(left));
-		}
-		
-		function transformEqualYsRightOutsideSquare(triangle) {
-			
-		}
-		
-		function transformEqualYsInsideSquare(triangle) {
-			
 		}
 
 	}
 );
 
-// Triangle functions
-
-function findEqualX(triangle) {
-	if (triangle[0].x == triangle[1].x) {
-		return new Array(0, 1);
-	} else if (triangle[1].x == triangle[2].x) {
-		return new Array(1, 2);
-	} else if (triangle[2].x == triangle[0].x) {
-		return new Array(2, 0);
-	} else {
-		return new Array();
-	}
-}
-
-function findEqualY(triangle) {
-	if (triangle[0].y == triangle[1].y) {
-		return new Array(0, 1);
-	} else if (triangle[1].y == triangle[2].y) {
-		return new Array(1, 2);
-	} else if (triangle[2].y == triangle[0].y) {
-		return new Array(2, 0);
-	} else {
-		return new Array();
-	}
-}
-
-//Objects
+// Objects
 
 function Point(x, y) {
 	this.x = x;
@@ -168,6 +105,176 @@ function scaleTrianglesWithScalar(triangles, scalar) {
 
 function scalePointsInTriangle(scalar, triangle) {
 	return new Triangle(prelude.map(scalar, triangle.points));
+}
+
+// Triangle functions.
+
+function pivotOf(triangle) {
+	return triangle.points[(prelude.sum(findEqualX(triangle)) + prelude.sum(findEqualY(triangle))) - 3];
+}
+
+function subdivideAll(triangles) {
+	return prelude.fold(concat, [], prelude.map(subdivide, triangles));
+}
+
+function subdivide(triangle) {
+	if (boxWidth(boundingBox(triangle)) == 1 || boxHeight(boundingBox(triangle)) == 1) {
+		return [];
+	}
+	switch (findEqualX(triangle).length) {
+		case 3: return subdivideVerticialLine(sortPointsByY(triangle));
+		case 2: return subdivideVerticalTriangle(sortPointsByY(triangle), findEqualX(sortPointsByY(triangle)));
+	}
+	switch (findEqualY(triangle).length) {
+		case 3: return subdivideHorizontalLine(sortPointsByX(triangle));
+		case 2: return subdivideHorizontalTriangle(sortPointsByX(triangle), findEqualY(sortPointsByX(triangle)));
+	}
+	return subdivideArbitraryTriangle(sortPointsByY(triangle));
+}
+
+function subdivideArbitraryTriangle(triangle) {
+	return concat(
+			subdivide(new Triangle(new Array(triangle.points[0], triangle.points[1], calculateProjectionPointOnVerticalTriangle(triangle)))),
+			subdivide(new Triangle(new Array(triangle.points[1], calculateProjectionPointOnVerticalTriangle(triangle), triangle.points[2])))
+	);
+}
+
+function subdivideVerticalTriangle(triangle, pointsOnSameX) {
+	if (arrayEqual(pointsOnSameX, new Array(1, 2))) {
+		return concat(
+				subdivide(new Triangle(new Array(triangle.points[1], triangle.points[0], calculateProjectionPointOnVerticalTriangle(triangle, pointsOnSameX)))),
+				new Array(new Triangle(new Array(triangle.points[1], triangle.points[2], calculateProjectionPointOnVerticalTriangle(triangle, pointsOnSameX))))
+		);
+	}
+	else if (arrayEqual(pointsOnSameX, new Array(0, 1))) {
+		return concat(
+				new Array(new Triangle(new Array(triangle.points[1], triangle.points[0], calculateProjectionPointOnVerticalTriangle(triangle, pointsOnSameX)))),
+				subdivide(new Triangle(new Array(triangle.points[1], triangle.points[2], calculateProjectionPointOnVerticalTriangle(triangle, pointsOnSameX))))
+		);
+	}
+	else {
+		return concat(
+				new Array(new Triangle(new Array(triangle.points[1], triangle.points[0], calculateProjectionPointOnVerticalTriangle(triangle, pointsOnSameX)))),
+				new Array(new Triangle(new Array(triangle.points[1], triangle.points[2], calculateProjectionPointOnVerticalTriangle(triangle, pointsOnSameX))))
+		);
+	}
+}
+
+function calculateProjectionPointOnVerticalTriangle(triangle, pointsOnSameX) {
+	if (arrayEqual(pointsOnSameX, new Array(0, 2))) {
+		return new Point(triangle.points[0].x, triangle.points[1].y);
+	}
+	return new Point(
+			prelude.round((triangle.points[otherPoint(pointsOnSameX)].x - triangle.points[pointsOnSameX[1]].x) * ((triangle.points[pointsOnSameX[1]].y - triangle.points[pointsOnSameX[0]].y) / (triangle.points[2].y - triangle.points[0].y)) + triangle.points[1].x),
+			triangle.points[1].y
+	);
+}
+
+function subdivideHorizontalTriangle(triangle, pointsOnSameY) {
+	if (arrayEqual(pointsOnSameY, new Array(1, 2))) {
+		return concat(
+				subdivide(new Triangle(new Array(triangle.points[1], triangle.points[0], calculateProjectionPointOnHorizontalTriangle(triangle, pointsOnSameY)))),
+				new Array(new Triangle(new Array(triangle.points[1], triangle.points[2], calculateProjectionPointOnHorizontalTriangle(triangle, pointsOnSameY))))
+		);
+	}
+	else if (arrayEqual(pointsOnSameY, new Array(0, 1))) {
+		return concat(
+				new Array(new Triangle(new Array(triangle.points[1], triangle.points[0], calculateProjectionPointOnHorizontalTriangle(triangle, pointsOnSameY)))),
+				subdivide(new Triangle(new Array(triangle.points[1], triangle.points[2], calculateProjectionPointOnHorizontalTriangle(triangle, pointsOnSameY))))
+		);
+	}
+	else {
+		return concat(
+				new Array(new Triangle(new Array(triangle.points[1], triangle.points[0], calculateProjectionPointOnHorizontalTriangle(triangle, pointsOnSameY)))),
+				new Array(new Triangle(new Array(triangle.points[1], triangle.points[2], calculateProjectionPointOnHorizontalTriangle(triangle, pointsOnSameY))))
+		);
+	}
+}
+
+function calculateProjectionPointOnHorizontalTriangle(triangle, pointsOnSameY) {
+	if (arrayEqual(pointsOnSameY, new Array(0, 2))) {
+		return new Point(triangle.points[1].x, triangle.points[0].y);
+	}
+	return new Point(
+			triangle.points[1].x,
+			prelude.round((triangle.points[1].y - (triangle.points[pointsOnSameY[1]].y - triangle.points[otherPoint(pointsOnSameY)].y) * ((triangle.points[pointsOnSameY[1]].x - triangle.points[pointsOnSameY[0]].x) / (triangle.points[2].x - triangle.points[0].x))))
+	);
+}
+
+function concat(e1, e2) {
+	return prelude.append(prelude.append([], e1), e2);
+}
+
+function otherPoint(ids) {
+	return diff([0,1,2], ids)[0];
+}
+
+function arrayEqual(a1, a2) {
+	if (a1.length != a2.length) {
+		return false;
+	}
+	return diff(a1, a2).length == 0 && diff(a2, a1).length == 0;
+}
+
+function diff(haystack, subtract) {
+	return haystack.filter(function(i) {return !(subtract.indexOf(i) > -1);});
+}
+
+//untested.
+function subdivideVerticialLine(triangle) {
+	return new Array(
+			createTriangleFromTwoPoints(prelude.initial(triangle.points)), 
+			createTriangleFromTwoPoints(prelude.tail(triangle.points))
+	);
+}
+
+//untested.
+function subdivideHorizontalLine(triangle) {
+	return new Array(
+			createTriangleFromTwoPoints(prelude.initial(triangle.points)), 
+			createTriangleFromTwoPoints(prelude.tail(triangle.points))
+	);
+}
+
+//untested.
+function createTriangleFromTwoPoints(points) {
+	return new Triangle(prelude.concat(points, points[0]));
+}
+
+function findEqualX(triangle) {
+	if (prelude.unique(xCoordinates(triangle.points)).length == 1) {
+		return new Array(0, 1, 2);
+	} 
+	else if (triangle.points[0].x == triangle.points[1].x) {
+		return new Array(0, 1);
+	} 
+	else if (triangle.points[1].x == triangle.points[2].x) {
+		return new Array(1, 2);
+	} 
+	else if (triangle.points[0].x == triangle.points[2].x) {
+		return new Array(0, 2);
+	} 
+	else {
+		return new Array();
+	}
+}
+
+function findEqualY(triangle) {
+	if (prelude.unique(yCoordinates(triangle.points)).length == 1) {
+		return new Array(0, 1, 2);
+	} 
+	else if (triangle.points[0].y == triangle.points[1].y) {
+		return new Array(0, 1);
+	} 
+	else if (triangle.points[1].y == triangle.points[2].y) {
+		return new Array(1, 2);
+	} 
+	else if (triangle.points[0].y == triangle.points[2].y) {
+		return new Array(0, 2);
+	} 
+	else {
+		return new Array();
+	}
 }
 
 function pointMapper(width, padding, box) {
@@ -248,24 +355,31 @@ function ratio(box) {
 
 // Sorting functions
 
-function sortPointsInTriangles(triangles) {
-	return prelude.map(sortPointsInTriangle, triangles);
+function sortPointsInTriangles(sorter, triangles) {
+	return prelude.map(sorter, triangles);
 }
 
-function sortPointsInTriangle(triangle) {
-	triangle.points.sort(
-			function(p1, p2) {
-				if (p1.y != p2.y) {
+function sortPointsByX(triangle) {
+	return new Triangle(
+		triangle.points.slice().sort(
+				function(p1, p2) {
+					return p1.x - p2.x;
+				}
+		)
+	);
+}
+
+function sortPointsByY(triangle) {
+	return new Triangle(
+		triangle.points.slice().sort(
+				function(p1, p2) {
 					return p1.y - p2.y;
 				}
-				return p1.x - p2.x;
-			}
+		)
 	);
-	
-	return triangle;
 }
 
-// Debug functions 
+// Debug functions
 
 function debugInputs(container, triangles) {
 	container.empty();
@@ -273,7 +387,14 @@ function debugInputs(container, triangles) {
 			function(t) {
 				container.append("<div>{ x: " + t.points[0].x + " y: " + t.points[0].y + " , x: " + t.points[1].x + " y: " + t.points[1].y + " , x: " + t.points[2].x + " y: " + t.points[2].y + " }</div>");
 			}, 
-			triangles
+			listyfy(triangles)
 	);
+}
+
+function listyfy(i) {
+	if (Array.isArray(i)) {
+		return i;
+	}
+	return [ i ];
 }
 
