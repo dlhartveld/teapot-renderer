@@ -30,18 +30,18 @@ $(document).ready(
 		function render(polygon, pivot, width, height) {
 			if (width > 0) {
 				if (height > 0) {
-					container.append("<div style='position: absolute; top: " + topRight(polygon).y + "px; left: " + (topRight(polygon).x - width) + "px; width: 0px; height: 0px; border-right: " + width + "px solid rgba(0,0,0,0); border-top: " + height + "px solid red;'></div>");
+					container.append("<div style='position: absolute; top: " + topRight(polygon).y + "px; left: " + (topRight(polygon).x - width) + "px; width: 0px; height: 0px; border-right: " + width + "px solid rgba(0,0,0,0); border-top: " + height + "px solid " + randomColor() + ";'></div>");
 				}
 				else if (height < 0) {
-					container.append("<div style='position: absolute; top: " + topLeft(polygon).y + "px; left: " + topLeft(polygon).x + "px; width: 0px; height: 0px; border-right: " + width + "px solid rgba(0,0,0,0); border-bottom: " + (-1 * height) + "px solid purple;'></div>");
+					container.append("<div style='position: absolute; top: " + topLeft(polygon).y + "px; left: " + topLeft(polygon).x + "px; width: 0px; height: 0px; border-right: " + width + "px solid rgba(0,0,0,0); border-bottom: " + (-1 * height) + "px solid " + randomColor() + ";'></div>");
 				}
 			}
 			else if (width < 0) {
 				if (height > 0) {
-					container.append("<div style='position: absolute; top: " + topLeft(polygon).y + "px; left: " + topLeft(polygon).x + "px; width: 0px; height: 0px; border-left: " + (-1 * width) + "px solid rgba(0,0,0,0); border-top: " + height + "px solid blue;'></div>");
+					container.append("<div style='position: absolute; top: " + topLeft(polygon).y + "px; left: " + topLeft(polygon).x + "px; width: 0px; height: 0px; border-left: " + (-1 * width) + "px solid rgba(0,0,0,0); border-top: " + height + "px solid " + randomColor() + ";'></div>");
 				}
 				else if (height < 0) {
-					container.append("<div style='position: absolute; top: " + topRight(polygon).y + "px; left: " + (topRight(polygon).x + width) + "px; width: 0px; height: 0px; border-left: " + (-1 * width) + "px solid rgba(0,0,0,0); border-bottom: " + (-1 * height) + "px solid green;'></div>");
+					container.append("<div style='position: absolute; top: " + topRight(polygon).y + "px; left: " + (topRight(polygon).x + width) + "px; width: 0px; height: 0px; border-left: " + (-1 * width) + "px solid rgba(0,0,0,0); border-bottom: " + (-1 * height) + "px solid " + randomColor() + ";'></div>");
 				}
 			}
 		}
@@ -406,6 +406,15 @@ function sortPointsByY(triangle) {
 		)
 	);
 }
+
+function randomColor() {
+	return "rgb(" + prelude.join(',', [randomByte(), randomByte(), randomByte()]) + ")";
+}
+
+function randomByte() {
+	return prelude.floor(Math.random() * 230);
+}
+
 
 // Debug functions
 
